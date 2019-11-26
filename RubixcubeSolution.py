@@ -9,28 +9,37 @@ import math
 from itertools import permutations
 usedto = []
 ls = []
+glo_node = 0
+glo_depth = 0
+glo_time = 0
 patt = ['R','R\'','L','L\'','U','U\'','D','D\'','F','F\'','B','B\'']
 
 array = np.array([
     [[0, 0, 2], [1, 0, 2], [2, 0, 2]],
     [[0, 0, 1], [1, 0, 1], [2, 0, 1]],
     [[0, 0, 0], [1, 0, 0], [2, 0, 0]],
-    [[0, 0, 2], [0, 1, 2], [0, 2, 2]],
-    [[0, 0, 1], [0, 1, 1], [0, 2, 1]],
-    [[0, 0, 0], [0, 1, 0], [0, 2, 0]],
+
+    [[0, 0, 2], [0, 0, 1], [0, 0, 0]],
+    [[0, 1, 2], [0, 1, 1], [0, 1, 0]],
+    [[0, 2, 2], [0, 2, 1], [0, 2, 0]],
+
     [[0, 0, 0], [1, 0, 0], [2, 0, 0]],
     [[0, 1, 0], [1, 1, 0], [2, 1, 0]],
     [[0, 2, 0], [1, 2, 0], [2, 2, 0]],
+
     [[2, 0, 0], [2, 0, 1], [2, 0, 2]],
     [[2, 1, 0], [2, 1, 1], [2, 1, 2]],
     [[2, 2, 0], [2, 2, 1], [2, 2, 2]],
+
     [[2, 0, 2], [1, 0, 2], [0, 0, 2]],
     [[2, 1, 2], [1, 1, 2], [0, 1, 2]],
     [[2, 2, 2], [1, 2, 2], [0, 2, 2]],
+    
     [[0, 2, 0], [1, 2, 0], [2, 2, 0]],
     [[0, 2, 1], [1, 2, 1], [2, 2, 1]],
     [[0, 2, 2], [1, 2, 2], [2, 2, 2]],
 ])
+
 
 # Initialise pieces
 corners = [Corner(0, 0, 'ryb'), Corner(1, 0, 'rgy'), Corner(2, 0, 'rwg'), Corner(3, 0, 'rbw'), Corner(4, 0, 'owb'), Corner(5, 0, 'ogw'), Corner(6, 0, 'oyg'), Corner(7, 0, 'oby')]
@@ -117,7 +126,8 @@ def ida(start):
 
                 #print("mem ",nodes.__sizeof__)
                 print("Nodes Generated:", nodes)
-                return
+                
+                return curr.g,nodes
 
             b = 0
             nodes = nodes + 12
@@ -141,7 +151,7 @@ def ida(start):
                 branching_factors.append(b)
 
         cost_limit = minimum
-
+    return 
 
 def manhattan_distance(cube, i, z, corner):
     c1 = array[i, z]
@@ -207,9 +217,8 @@ for Are in range(1,7):
                 x = random.randint(1,math.factorial(12)/(math.factorial(12-Are)))       
             else :
                 usedto.append(x)
-            print(ls[x-1])
-            current_cube.scramble(ls[x-1])
-            current_cube.print_cube()
+            # current_cube.scramble(ls[x-1])
+            # current_cube.print_cube()
     else :
         for _ in range(11):
             x = random.randint(1,math.factorial(12)/(math.factorial(12-Are)))        
@@ -242,10 +251,15 @@ for Are in range(1,7):
         fmt = '%H:%M:%S'
         start = time.strftime(fmt)
 
-        ida(curr)
+        glo_depth,glo_node=ida(curr)
 
         time.ctime()
         end = time.strftime(fmt)
+        glo_time = datetime.strptime(end, fmt) - datetime.strptime(start, fmt)
         print("Time taken(sec):", datetime.strptime(end, fmt) - datetime.strptime(start, fmt))
-        #write txt   
-
+        #write txt
+        with open('dataAS.txt','a') as f:
+            #depth,time,node
+            f.write(''.join(str(glo_depth)+','+str(glo_time)+','+str(glo_node)+'\n'))    
+    ls = []
+    usedto = []

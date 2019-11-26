@@ -1,6 +1,6 @@
 # Rubik's Cube Solver
 
-This project is belong to Farhan Shoukat.
+The original project is belong to Farhan Shoukat.
 https://github.com/FarhanShoukat/Rubiks-Cube-Solver
 We use for university project.
 Now It can run in multiple pattern(random).

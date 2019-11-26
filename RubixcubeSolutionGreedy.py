@@ -40,7 +40,6 @@ array = np.array([
     [[0, 2, 2], [1, 2, 2], [2, 2, 2]],
 ])
 
-
 # Initialise pieces
 corners = [Corner(0, 0, 'ryb'), Corner(1, 0, 'rgy'), Corner(2, 0, 'rwg'), Corner(3, 0, 'rbw'), Corner(4, 0, 'owb'), Corner(5, 0, 'ogw'), Corner(6, 0, 'oyg'), Corner(7, 0, 'oby')]
 edges = [Edge(0, 0, 'ry'), Edge(1, 0, 'rg'), Edge(2, 0, 'rw'), Edge(3, 0, 'rb'), Edge(4, 0, 'yb'), Edge(5, 0, 'wb'), Edge(6, 0, 'wg'), Edge(7, 0, 'yg'), Edge(8, 0, 'ow'), Edge(9, 0, 'og'), Edge(10, 0, 'oy'), Edge(11, 0, 'ob')]
@@ -54,7 +53,7 @@ goal_cube = deepcopy(current_cube)
 
 class State:
     cube = None
-    g = 0
+    depth = 0
     h = 0
     parent = None
     move = None
@@ -112,36 +111,32 @@ def ida(start):
 
         while len(frontier) != 0:
             curr = frontier.pop(\
-                    [i.g + i.h for i in frontier].index(\
-                    min([i.g+i.h for i in frontier])\
+                    [i.h for i in frontier].index(\
+                    min([i.h for i in frontier])\
                     ))
 
             if goal_reached(curr):
-                print('Goal Height:', curr.g)
-                #print('Branching Factor:', sum(branching_factors)/len(branching_factors))
-                # while curr is not None:
-                #    if curr.move is not None:
-                #        print(curr.move)
-                #    curr = curr.parent
-
-                #print("mem ",nodes.__sizeof__)
+                print('Goal Height:', curr.depth)
                 print("Nodes Generated:", nodes)
-                
-                return curr.g,nodes
+                return curr.depth,nodes
 
             b = 0
             nodes = nodes + 12
             for i in range(12):
                 new = State()
                 new.cube = np.array(curr.cube)
-                new.g = curr.g + 1
+                new.depth = curr.depth + 1
                 new.parent = curr
                 new.move = make_move(new.cube, i + 1, 0)
                 new.h = corner_edge_sum_max(new.cube)
 
-                if new.g + new.h > cost_limit:
-                    if minimum is None or new.g + new.h < minimum:
-                        minimum = new.g + new.h
+                # print("Depth: "+str(new.depth))
+                # print("current cost_limit: "+str(cost_limit))
+                # print("minimum: "+str(minimum))
+                # print("houristic: "+str(new.h))
+                if new.h > cost_limit:
+                    if minimum is None or new.h < minimum:
+                        minimum = new.h
                     continue
                 if curr.parent is not None and (contains1(new.cube, curr) or contains2(new.cube, frontier)):
                     continue
@@ -151,7 +146,7 @@ def ida(start):
                 branching_factors.append(b)
 
         cost_limit = minimum
-     
+    
 
 def manhattan_distance(cube, i, z, corner):
     c1 = array[i, z]
@@ -197,9 +192,6 @@ def corner_edge_sum_max(cube):
 
 ##########################################
 
-#set in loop
-
-#handle = open('input.txt')
 
 for Are in range(1,7):
     curr = State()
@@ -226,11 +218,8 @@ for Are in range(1,7):
                 x = random.randint(1,math.factorial(12)/(math.factorial(12-Are)))       
             else :
                 usedto.append(x)
-    ite = 1
     for runnum in usedto:
-        print("A* ite : ",ite)
-        ite += 1
-        print("pattern : ",ls[runnum-1])
+        print(ls[runnum-1])
         current_cube = Cube()
         current_cube.cos = deepcopy(corners)
         current_cube.eds = deepcopy(edges)
@@ -254,14 +243,14 @@ for Are in range(1,7):
         fmt = '%H:%M:%S'
         start = time.strftime(fmt)
 
-        glo_depth,glo_node=ida(curr)
+        glo_depth,glo_node = ida(curr)
 
         time.ctime()
         end = time.strftime(fmt)
         glo_time = datetime.strptime(end, fmt) - datetime.strptime(start, fmt)
         print("Time taken(sec):", datetime.strptime(end, fmt) - datetime.strptime(start, fmt))
         #write txt
-        with open('dataAS.txt','a') as f:
+        with open('dataGreedy.txt','a') as f:
             #depth,time,node
             f.write(''.join(str(glo_depth)+','+str(glo_time)+','+str(glo_node)+'\n'))    
     ls = []

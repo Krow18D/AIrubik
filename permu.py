@@ -21,7 +21,7 @@ goal_cube = deepcopy(current_cube)
 
 
 
-for i in range(1,2):
+for i in range(3,4):
     print("i = ",i)
     scram = permutations(patt,i)    
     for el in scram:

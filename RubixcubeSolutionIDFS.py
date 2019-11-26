@@ -2,6 +2,32 @@ from ScrambleRubixcube import xInitial, make_move
 import numpy as np
 from datetime import datetime
 import time
+import sys
+from cube import *
+import random
+import math
+from itertools import permutations
+usedto = []
+ls = []
+glo_node = 0
+glo_depth = 0
+glo_time = 0
+glo_cost = 0
+patt = ['R','R\'','L','L\'','U','U\'','D','D\'','F','F\'','B','B\'']
+
+
+
+# Initialise pieces
+corners = [Corner(0, 0, 'ryb'), Corner(1, 0, 'rgy'), Corner(2, 0, 'rwg'), Corner(3, 0, 'rbw'), Corner(4, 0, 'owb'), Corner(5, 0, 'ogw'), Corner(6, 0, 'oyg'), Corner(7, 0, 'oby')]
+edges = [Edge(0, 0, 'ry'), Edge(1, 0, 'rg'), Edge(2, 0, 'rw'), Edge(3, 0, 'rb'), Edge(4, 0, 'yb'), Edge(5, 0, 'wb'), Edge(6, 0, 'wg'), Edge(7, 0, 'yg'), Edge(8, 0, 'ow'), Edge(9, 0, 'og'), Edge(10, 0, 'oy'), Edge(11, 0, 'ob')]
+centers = [Center(0, 'r'), Center(1, 'b'), Center(2, 'w'), Center(3, 'g'), Center(4, 'y'), Center(5, 'o')]
+current_cube = Cube()
+current_cube.cos = deepcopy(corners)
+current_cube.eds = deepcopy(edges)
+current_cube.ces = deepcopy(centers)
+
+goal_cube = deepcopy(current_cube)
+
 
 
 class State:
@@ -67,13 +93,13 @@ def idfs(start):
 
             if goal_reached(curr.cube):
                 print('Goal Height:', curr.cost)
-                print('Branching Factor:', sum(branching_factors)/len(branching_factors))
+                # print('Branching Factor:', sum(branching_factors)/len(branching_factors))
                 # while curr is not None:
                 #    if curr.move is not None:
                 #        print(curr.move)
                 #    curr = curr.parent
                 print("Nodes Generated:", nodes)
-                return
+                return curr.cost,nodes
 
             if curr.cost + 1 <= cost_limit:
                 child_cost = curr.cost + 1
@@ -95,66 +121,71 @@ def idfs(start):
         branching_factors.clear()
         cost_limit = cost_limit + 1
 
-
-def manhattan_distance(cube, i, z, corner):
-    x = i / 3
-    y = i % 3
-    center = None
-    for c in [1, 4, 7, 10, 13, 16]:
-        if cube[i, z] == cube[c, 1]:
-            center = c
-            break
-
-    if corner:
-        d1 = abs((center - 1) / 3 - x) + abs((center - 1) % 3 - y) + abs(z - 0)
-        d2 = abs((center - 1) / 3 - x) + abs((center - 1) % 3 - y) + abs(z - 2)
-        d3 = abs((center + 1) / 3 - x) + abs((center + 1) % 3 - y) + abs(z - 0)
-        d4 = abs((center + 1) / 3 - x) + abs((center + 1) % 3 - y) + abs(z - 2)
-        return min(d1, d2, d3, d4)
-    else:
-        d1 = abs((center - 1) / 3 - x) + abs((center - 1) % 3 - y) + abs(z - 1)
-        d2 = abs(center / 3 - x) + abs(center % 3 - y) + abs(z - 0)
-        d3 = abs(center / 3 - x) + abs(center % 3 - y) + abs(z - 2)
-        d4 = abs((center + 1) / 3 - x) + abs((center + 1) % 3 - y) + abs(z - 1)
-        return min(d1, d2, d3, d4)
-
-
-def corner_edge_sum_max(cube):
-    corners = 0
-    edges = 0
-    for i in range(18):
-        if i % 3 == 0 or i % 3 == 2:
-            corners = corners + manhattan_distance(cube, i, 0, True) + manhattan_distance(cube, i, 2, True)
-            edges = edges + manhattan_distance(cube, i, 1, False)
-        else:
-            edges = edges + manhattan_distance(cube, i, 0, False) + manhattan_distance(cube, i, 2, False)
-    return max(corners / 4, edges / 4)
-
-
 ##########################################
 
 
-curr = State()
-curr.cube = np.array(xInitial)
-handle = open('input.txt')
-indexes = [0, 1, 2, 3, 6, 9, 12, 4, 7, 10, 13, 5, 8, 11, 14, 15, 16, 17]
-index = 0
-for line in handle:
-    line = line.replace(' ', '')
-    for row in line.split('['):
-        if len(row) != 0:
-            i = indexes[index]
-            curr.cube[i, 0] = row[1]
-            curr.cube[i, 1] = row[4]
-            curr.cube[i, 2] = row[7]
-            index = index + 1
+for Are in range(1,7):
+    curr = State()
+    curr.cube = np.array(xInitial)
+    print("r = ",Are)
+    scram = permutations(patt,Are)    
+    for el in scram:
+        #print(el)
+        temp = ' '.join(el)
+        ls.append(temp)
+    if Are > 1:
+        for _ in range(100):
+            x = random.randint(1,math.factorial(12)/(math.factorial(12-Are)))        
+            while x  in usedto:
+                x = random.randint(1,math.factorial(12)/(math.factorial(12-Are)))       
+            else :
+                usedto.append(x)
+            # current_cube.scramble(ls[x-1])
+            # current_cube.print_cube()
+    else :
+        for _ in range(11):
+            x = random.randint(1,math.factorial(12)/(math.factorial(12-Are)))        
+            while x  in usedto:
+                x = random.randint(1,math.factorial(12)/(math.factorial(12-Are)))       
+            else :
+                usedto.append(x)
+    ite = 1
+    for runnum in usedto:
+        print("IDFS ite : ",ite)
+        ite += 1
+        print("pattern : ",ls[runnum-1])
+        current_cube = Cube()
+        current_cube.cos = deepcopy(corners)
+        current_cube.eds = deepcopy(edges)
+        current_cube.ces = deepcopy(centers)
+        current_cube.scramble(ls[runnum-1])
+        current_cube.print_cube()
+        handle = open('input.txt')
+        indexes = [0, 1, 2, 3, 6, 9, 12, 4, 7, 10, 13, 5, 8, 11, 14, 15, 16, 17]
+        index = 0
+        for line in handle:
+            line = line.replace(' ', '')
+            for row in line.split('['):
+                if len(row) != 0:
+                    i = indexes[index]
+                    curr.cube[i, 0] = row[1]
+                    curr.cube[i, 1] = row[4]
+                    curr.cube[i, 2] = row[7]
+                    index = index + 1
 
-time.ctime()
-fmt = '%H:%M:%S'
-start = time.strftime(fmt)
+        time.ctime()
+        fmt = '%H:%M:%S'
+        start = time.strftime(fmt)
 
-idfs(curr)
+        glo_cost,glo_node = idfs(curr)
 
-time.ctime()
-end = time.strftime(fmt)
-print("Time taken(sec):", datetime.strptime(end, fmt) - datetime.strptime(start, fmt))
+        time.ctime()
+        end = time.strftime(fmt)
+        glo_time = datetime.strptime(end, fmt) - datetime.strptime(start, fmt)
+        print("Time taken(sec):", datetime.strptime(end, fmt) - datetime.strptime(start, fmt))
+        #write txt
+        with open('dataIDFS.txt','a') as f:
+            #depth,time,node
+            f.write(''.join(str(glo_cost)+','+str(glo_time)+','+str(glo_node)+'\n'))    
+    ls = []
+    usedto = []

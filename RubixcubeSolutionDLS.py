@@ -12,33 +12,8 @@ ls = []
 glo_node = 0
 glo_depth = 0
 glo_time = 0
+glo_cost = 0
 patt = ['R','R\'','L','L\'','U','U\'','D','D\'','F','F\'','B','B\'']
-
-array = np.array([
-    [[0, 0, 2], [1, 0, 2], [2, 0, 2]],
-    [[0, 0, 1], [1, 0, 1], [2, 0, 1]],
-    [[0, 0, 0], [1, 0, 0], [2, 0, 0]],
-
-    [[0, 0, 2], [0, 0, 1], [0, 0, 0]],
-    [[0, 1, 2], [0, 1, 1], [0, 1, 0]],
-    [[0, 2, 2], [0, 2, 1], [0, 2, 0]],
-
-    [[0, 0, 0], [1, 0, 0], [2, 0, 0]],
-    [[0, 1, 0], [1, 1, 0], [2, 1, 0]],
-    [[0, 2, 0], [1, 2, 0], [2, 2, 0]],
-
-    [[2, 0, 0], [2, 0, 1], [2, 0, 2]],
-    [[2, 1, 0], [2, 1, 1], [2, 1, 2]],
-    [[2, 2, 0], [2, 2, 1], [2, 2, 2]],
-
-    [[2, 0, 2], [1, 0, 2], [0, 0, 2]],
-    [[2, 1, 2], [1, 1, 2], [0, 1, 2]],
-    [[2, 2, 2], [1, 2, 2], [0, 2, 2]],
-    
-    [[0, 2, 0], [1, 2, 0], [2, 2, 0]],
-    [[0, 2, 1], [1, 2, 1], [2, 2, 1]],
-    [[0, 2, 2], [1, 2, 2], [2, 2, 2]],
-])
 
 
 # Initialise pieces
@@ -54,19 +29,21 @@ goal_cube = deepcopy(current_cube)
 
 class State:
     cube = None
-    g = 0
-    h = 0
+    cost = 0
     parent = None
     move = None
 
 
 # checks if goal reached. if reached writes goal state in output.txt
-def goal_reached(curr):
-    if curr.h != 0:
-        return False
+def goal_reached(cube):
+    for ref in [0, 3, 6, 9, 12, 15]:
+        first = cube[ref, 0]
+        for i in range(3):
+            for j in range(3):
+                if first != cube[ref + i, j]:
+                    return False
 
     # goal reached
-    cube = curr.cube
     file = open('output.txt', 'w')
     file.write("              " + str(cube[0, 0:3]) + '\n')
     file.write("              " + str(cube[1, 0:3]) + '\n')
@@ -99,107 +76,43 @@ def contains2(child, frontier):
     return False
 
 
-def ida(start):
-    start.h = corner_edge_sum_max(start.cube)
-    cost_limit = start.h
+def idfs(start):
+    cost_limit = 6
     nodes = 0
     frontier = list()
     branching_factors = list()
 
     while True:
-        minimum = None
         frontier.append(start)
 
         while len(frontier) != 0:
-            curr = frontier.pop(\
-                    [i.g + i.h for i in frontier].index(\
-                    min([i.g+i.h for i in frontier])\
-                    ))
-
-            if goal_reached(curr):
-                print('Goal Height:', curr.g)
-                #print('Branching Factor:', sum(branching_factors)/len(branching_factors))
-                # while curr is not None:
-                #    if curr.move is not None:
-                #        print(curr.move)
-                #    curr = curr.parent
-
-                #print("mem ",nodes.__sizeof__)
+            curr = frontier.pop()
+            # print("xxx")
+            if goal_reached(curr.cube):
+                print('Goal Height:', curr.cost)
                 print("Nodes Generated:", nodes)
-                
-                return curr.g,nodes
+                return curr.cost,nodes
 
-            b = 0
-            nodes = nodes + 12
-            for i in range(12):
-                new = State()
-                new.cube = np.array(curr.cube)
-                new.g = curr.g + 1
-                new.parent = curr
-                new.move = make_move(new.cube, i + 1, 0)
-                new.h = corner_edge_sum_max(new.cube)
-
-                if new.g + new.h > cost_limit:
-                    if minimum is None or new.g + new.h < minimum:
-                        minimum = new.g + new.h
-                    continue
-                if curr.parent is not None and (contains1(new.cube, curr) or contains2(new.cube, frontier)):
-                    continue
-                frontier.append(new)
-                b = b + 1
-            if b != 0:
+            if curr.cost + 1 <= cost_limit:
+                child_cost = curr.cost + 1
+                b = 0
+                for i in range(12):
+                    nodes = nodes + 1
+                    new = State()
+                    new.cube = np.array(curr.cube)
+                    new.cost = child_cost
+                    new.parent = curr
+                    new.move = make_move(new.cube, i + 1, 0)
+                    # if curr.parent is not None and np.array_equal(curr.parent.cube, new.cube):
+                    if curr.parent is not None and (contains1(new.cube, curr) or contains2(new.cube, frontier)):
+                        continue
+                    frontier.append(new)
+                    b = b + 1
                 branching_factors.append(b)
 
-        cost_limit = minimum
-     
-
-def manhattan_distance(cube, i, z, corner):
-    c1 = array[i, z]
-    center = None
-    for c in [1, 4, 7, 10, 13, 16]:
-        if cube[i, z] == cube[c, 1]:
-            center = c
-            break
-
-    if corner:
-        c2 = array[center - 1, 0]
-        d1 = abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
-        c2 = array[center - 1, 2]
-        d2 = abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
-        c2 = array[center + 1, 0]
-        d3 = abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
-        c2 = array[center + 1, 2]
-        d4 = abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
-        return min(d1, d2, d3, d4)
-    else:
-        c2 = array[center - 1, 1]
-        d1 = abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
-        c2 = array[center, 0]
-        d2 = abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
-        c2 = array[center, 2]
-        d3 = abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
-        c2 = array[center + 1, 1]
-        d4 = abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
-        return min(d1, d2, d3, d4)
-
-
-def corner_edge_sum_max(cube):
-    corners = 0
-    edges = 0
-    for i in range(18):
-        if i % 3 == 0 or i % 3 == 2:
-            corners = corners + manhattan_distance(cube, i, 0, True) + manhattan_distance(cube, i, 2, True)
-            edges = edges + manhattan_distance(cube, i, 1, False)
-        else:
-            edges = edges + manhattan_distance(cube, i, 0, False) + manhattan_distance(cube, i, 2, False)
-    return max(corners / 12, edges / 8)
-
+        branching_factors.clear()
 
 ##########################################
-
-#set in loop
-
-#handle = open('input.txt')
 
 for Are in range(1,7):
     curr = State()
@@ -228,7 +141,7 @@ for Are in range(1,7):
                 usedto.append(x)
     ite = 1
     for runnum in usedto:
-        print("A* ite : ",ite)
+        print("DLS ite : ",ite)
         ite += 1
         print("pattern : ",ls[runnum-1])
         current_cube = Cube()
@@ -254,15 +167,14 @@ for Are in range(1,7):
         fmt = '%H:%M:%S'
         start = time.strftime(fmt)
 
-        glo_depth,glo_node=ida(curr)
+        glo_cost,glo_node = idfs(curr)
 
         time.ctime()
         end = time.strftime(fmt)
-        glo_time = datetime.strptime(end, fmt) - datetime.strptime(start, fmt)
         print("Time taken(sec):", datetime.strptime(end, fmt) - datetime.strptime(start, fmt))
         #write txt
-        with open('dataAS.txt','a') as f:
+        with open('dataDLS.txt','a') as f:
             #depth,time,node
-            f.write(''.join(str(glo_depth)+','+str(glo_time)+','+str(glo_node)+'\n'))    
+            f.write(''.join(str(glo_cost)+','+str(glo_time)+','+str(glo_node)+'\n'))    
     ls = []
     usedto = []
